@@ -1,0 +1,124 @@
+<template x-if="accessToken">
+  <div class="flex flex-col h-full">
+
+    <!-- User ID та Room ID -->
+    <div class="mb-2 p-2 bg-gray-200 rounded text-sm break-words flex justify-between">
+      <div>
+        <span class="font-bold">Your Matrix ID:</span>
+        <span x-text="userId ? userId : 'Loading...'"></span>
+      </div>
+      <div class="text-right">
+        <span class="font-bold">Room ID:</span>
+        <span 
+          x-text="roomId || 'Not selected'" 
+          class="ml-1 bg-gray-100 p-1 rounded cursor-pointer hover:bg-gray-300" 
+          @click="$clipboard(roomId)">
+        </span>
+        <span class="text-xs text-gray-500 ml-1">(Click to copy)</span>
+      </div>
+    </div>
+
+    <!-- Список повідомлень (НОВИЙ БЛОК ПО ЗАВДАННЮ) -->
+    <div id="messages" class="flex-1 overflow-y-auto mb-4 p-2 bg-gray-50 rounded border border-gray-200">
+      <template x-if="messages.length === 0">
+        <p class="text-gray-500 text-center">No messages yet. Start the conversation!</p>
+      </template>
+
+      <template x-for="msg in messages" :key="msg.id">
+        <div class="mb-2 p-2 rounded hover:bg-gray-100 group relative">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <strong
+                x-text="msg.sender === userId ? 'You' : msg.sender.split(':')[0].substring(1) + ':'">
+              </strong>
+              <span x-text="msg.body" class="ml-2 break-words"></span>
+              <span x-show="msg.edited" class="text-xs text-gray-500 ml-2">(edited)</span>
+            </div>
+
+            <!-- Кнопки тільки для своїх повідомлень -->
+            <template x-if="msg.sender === userId">
+              <div class="hidden group-hover:flex space-x-1 ml-2">
+                <button
+                  @click="startEdit(msg.id, msg.body)"
+                  class="text-xs text-blue-600 hover:underline">
+                  Edit
+                </button>
+
+                <button
+                  @click="deleteMessage(msg.id)"
+                  class="text-xs text-red-600 hover:underline">
+                  Delete
+                </button>
+              </div>
+            </template>
+          </div>
+
+          <!-- Поле редагування (показується при editMode) -->
+          <div x-show="editMode === msg.id" class="mt-2">
+            <textarea
+              x-model="editText"
+              @keyup.enter="saveEdit(msg.id)"
+              @keyup.escape="cancelEdit()"
+              class="w-full p-1 border rounded text-sm resize-none"
+              rows="2">
+            </textarea>
+            <div class="flex space-x-1 mt-1">
+              <button
+                @click="saveEdit(msg.id)"
+                class="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                Save
+              </button>
+              <button
+                @click="cancelEdit()"
+                class="text-xs bg-gray-400 text-white px-2 py-1 rounded">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Поле для введення повідомлення -->
+    <div class="mb-4">
+      <textarea 
+        x-model="newMessage" 
+        placeholder="Type your message here..." 
+        class="message-input border p-2 w-full mb-2 rounded resize-y focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </textarea>
+      <button 
+        @click="sendMessage()" 
+        class="bg-green-500 text-white p-2 w-full rounded hover:bg-green-600 transition">
+        Send
+      </button>
+    </div>
+
+    <!-- Блок інвайтів / приєднання (як у тебе було) -->
+    <div class="space-y-2">
+      <div>
+        <input 
+          x-model="inviteUser" 
+          placeholder="Invite user (e.g., @user:matrix.org)" 
+          class="border p-2 w-full mb-1 rounded">
+        <button 
+          @click="inviteUserToRoom()" 
+          class="bg-purple-500 text-white p-2 w-full rounded hover:bg-purple-600 transition">
+          Invite
+        </button>
+      </div>
+
+      <div>
+        <input 
+          x-model="joinRoomId" 
+          placeholder="Room ID to join (e.g., !roomId:matrix.org)" 
+          class="border p-2 w-full mb-1 rounded">
+        <button 
+          @click="joinRoom()" 
+          class="bg-yellow-500 text-white p-2 w-full rounded hover:bg-yellow-600 transition">
+          Join Room
+        </button>
+      </div>
+    </div>
+
+  </div>
+</template>
